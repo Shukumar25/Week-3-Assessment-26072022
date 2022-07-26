@@ -1,0 +1,110 @@
+                                                           HIVE Solution
+
+create table posts (id int, post_type int, creationdate string, score int, viewcount float, owneruserid int,title string, answercount int, commentcount int ) row format delimited fields terminated by ',';
+describe posts;
+load data inpath '/home/shubham/Desktop/posts.csv' into table posts;
+select * from posts;
+select Count(*) from posts;
+
+create table comments (id int, userid int) row format delimited fields terminated by ',';
+describe comments;
+load data inpath '/home/shubham/Desktop/comments.csv' into table comments;
+select * from comments;
+select Count(*) from comments;
+
+ 
+create table users (id int,reputation int,displayname string,loc string,age int) row format delimited fields terminated by ',';
+describe users;
+load data local inpath '/home/shubham/Desktop/users.csv' into table users;
+select * from users;
+select Count(*) from users;
+
+create table posttypes (id int, name string) row format delimited fields terminated by ',';
+describe posttypes;
+load data local inpath '/home/shubham/Desktop/posttypes.csv' into table posttypes;
+select * from posttypes;
+select Count(*) from posttypes;
+
+A) select display_name,viewcount from posts inner join users on (posts.id=users.id) order by viewcount desc limit 5;
+
+B) select avg(users.age) as A from users group by age;
+
+C) select displayname,creation_date from users inner join posts on (users.id=posts.id) order by creationdate asc limit 5;
+
+D) select displayname,commentcount,reputation from users inner join posts on (posts.id=users.id) order by reputation desc limit 5;
+
+E) 
+
+F) Find the owner name and id of user whose post has got maximum no. of view counts so far.
+
+select owneruserid,displayname,viewcount from users inner join posts on (posts.id=users.id) order by viewcount desc limit 5;
+
+G) select title,owneruserid,displayname,commentcount from users inner join posts on (posts.id=users.id) order by commentcount desc limit 1;
+
+H) select loc ,count(id) as B from users group by loc order by B desc limit 1;
+
+I) (i) select loc, count(answercount) from users inner join posts on (posts.id=users.id) where loc like '%India%' group by loc; 
+
+  (ii) select loc, count(post_type) from users inner join posts on (posts.id=users.id) where loc like '%India%' group by loc;
+
+ (iii) select loc, count(commentcount) from users inner join posts on (posts.id=users.id) where loc like '%India%' group by loc;
+
+
+
+
+                                                                PIG Solution
+
+A = load '/home/shubham/Desktop/posts.csv' using PigStorage(',') as (id:int, post_type:int, creation_date:chararray, score:int, viewcount:float, owneruserid:int,title:chararray, answercount:int, commentcount:int );
+
+B = load '/home/shubham/Desktop/comments.csv' using PigStorage(',') as (id:int, userid:int);
+
+C = load '/home/shubham/Desktop/users.csv' using PigStorage(',') as (id:int, reputation:int, displayname:chararray, loc:chararray, age:int);
+
+D = load '/home/shubham/Desktop/posttypes.csv' using PigStorage(',') as (id:int, name:chararray);
+
+
+A) e = join A by id, c by id;
+   f = ORDER e by reputation desc;
+   g = limit f 1;
+   h = foreach g generate displayname,posttype;
+   dump h;
+
+B) e = group C ALL;
+   f= foreach e generate AVG(C.age);
+   dump f;
+
+C) e = join A by id,C by id;
+   f = ORDER e by creationdate asc;
+   g = limit f 1;
+   h = foreach g generate displayname,creationdate;
+   dump h;
+
+D) e = join A by id, A by id;
+   f = ORDER e by reputation desc;
+   g = limit f 1;
+   h = foreach g generate displayname,commentcount;
+
+E) e = join A by id, C by id;
+   f = ORDER e by score desc;
+   g = limit f 1;
+   h = foreach g generate displayname;
+
+F) e = join A by id, C by id;
+   f = ORDER e by viewcount desc;
+   g = limit f 1;
+   h = foreach g generate displayname,owneruserid;
+   dump h;
+
+
+G)
+
+H) 
+
+I) e = join A by id, C by id;
+   f = filter e by loc=='India';
+   g = group f ALL;
+   h = foreach g generate sum(f.commentcount),sum(f.answercount),sum(f.score);
+   dump h;
+
+
+
